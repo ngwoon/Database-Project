@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>793</width>
+    <height>607</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <widget class="QTableWidget" name="boardList">
+   <property name="geometry">
+    <rect>
+     <x>60</x>
+     <y>140</y>
+     <width>591</width>
+     <height>441</height>
+    </rect>
+   </property>
+   <property name="editTriggers">
+    <set>QAbstractItemView::NoEditTriggers</set>
+   </property>
+   <column>
+    <property name="text">
+     <string>board_id</string>
+    </property>
+   </column>
+   <column>
+    <property name="text">
+     <string>title</string>
+    </property>
+   </column>
+   <column>
+    <property name="text">
+     <string>content</string>
+    </property>
+   </column>
+   <column>
+    <property name="text">
+     <string>nickname</string>
+    </property>
+   </column>
+   <column>
+    <property name="text">
+     <string>recommends</string>
+    </property>
+   </column>
+  </widget>
+  <widget class="QLineEdit" name="searchTextLabel">
+   <property name="geometry">
+    <rect>
+     <x>60</x>
+     <y>90</y>
+     <width>501</width>
+     <height>31</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="searchButton">
+   <property name="geometry">
+    <rect>
+     <x>580</x>
+     <y>90</y>
+     <width>71</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>검색</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="categoryComboBox">
+   <property name="geometry">
+    <rect>
+     <x>660</x>
+     <y>140</y>
+     <width>81</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <item>
+    <property name="text">
+     <string>자유</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>취미</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>연애</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>고민</string>
+    </property>
+   </item>
+  </widget>
+  <widget class="QComboBox" name="distanceComboBox">
+   <property name="geometry">
+    <rect>
+     <x>660</x>
+     <y>180</y>
+     <width>81</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <item>
+    <property name="text">
+     <string>3km</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>5km</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>10km</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>15km</string>
+    </property>
+   </item>
+  </widget>
+  <widget class="QComboBox" name="boundaryComboBox">
+   <property name="geometry">
+    <rect>
+     <x>660</x>
+     <y>220</y>
+     <width>81</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <item>
+    <property name="text">
+     <string>제목</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>작성자</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>내용</string>
+    </property>
+   </item>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

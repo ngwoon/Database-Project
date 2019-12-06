@@ -67,19 +67,19 @@ class MainDisplay(QMainWindow, QObject, board_window):
         self.showlist.clicked.connect(self.showClicked)
         self.write.clicked.connect(self.writeClicked)
         self.refresh.clicked.connect(self.refreshClicked)
-        print(controller.map_refreshed)
-        controller.map_refreshed.connect(self.load)
-
+        self.signals = controller.Signals()
+        self.signals.map_refreshed.connect(self.load)
 
         #이 부분에 처음 html화면 띄우는 init 코드가 와야함
         global loc
         loc= {"latitude" : 0.0, "longitude" : 0.0}
-        self.getLocThread = threading.Thread(target=controller.getLocation, args=(loc,))
+        self.getLocThread = threading.Thread(target=controller.getLocation, args=(loc, self.signals))
         self.getLocThread.start()
         self.show()
 
     @pyqtSlot()
     def load(self):
+        print("dfsf")
         self.map.load(QUrl.fromLocalFile(
             os.path.split(os.path.abspath(__file__))[0] + r'\map.html'
         ))
@@ -90,7 +90,7 @@ class MainDisplay(QMainWindow, QObject, board_window):
         self.writeBoardWindow = WriteBoard()
     def refreshClicked(self):
         global loc
-        self.getLocThread = threading.Thread(target=controller.getLocation, args=(loc,))
+        self.getLocThread = threading.Thread(target=controller.getLocation, args=(loc, self.signals))
         self.getLocThread.start()
 
 
@@ -121,11 +121,6 @@ class showBoard(QWidget, showboard_window):
         super().__init__()
         self.setupUi(self)
         self.searchButton.clicked.connect(self.searchButtonClicked)
-        self.boardList.setItem(0, 0, QTableWidgetItem("1"))
-        self.boardList.setItem(0, 1, QTableWidgetItem("테스트 제목"))
-        self.boardList.setItem(0, 2, QTableWidgetItem("테스트 내용"))
-        self.boardList.setItem(0, 3, QTableWidgetItem("김호띠"))
-        self.boardList.setItem(0, 4, QTableWidgetItem("0"))
         self.show()
 
     def searchButtonClicked(self):

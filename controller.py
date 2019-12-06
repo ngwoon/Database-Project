@@ -1,7 +1,9 @@
 import pymysql
 import folium
+from PyQt5.QtCore import QObject
 from PyQt5.QtCore import QThread, QUrl
 from PyQt5.QtCore import pyqtSignal, pyqtSlot
+
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
@@ -14,8 +16,6 @@ curs = conn.cursor()
 
 class Signals(QObject):
     map_refreshed = pyqtSignal()
-
-
 
 #쿼리를 DB에 날려 원하는 투플만 뽑아오는 것이 모든 투플을 뽑아 파이썬에서 탐색하는 것 보다 성능이 훨씬 좋다. (log(n) 과 n 타임 차이)
 def search(id, pw):
@@ -32,7 +32,7 @@ def search(id, pw):
 
         return {"result" : "success", "user_id" : userinfo_rows[0], "nickname" : userinfo_rows[1]}
 
-def getLocation(loc):
+def getLocation(loc, signals):
 
     options = Options()
     # options.add_argument("start-maximized")
@@ -56,10 +56,9 @@ def getLocation(loc):
 
     map_osm = folium.Map(location=[parsed[0].text, parsed[1].text], zoom_start=17)
     folium.Marker([parsed[0].text, parsed[1].text]).add_to(map_osm)
-    print(parsed[0].text, ' ', parsed[1].text)
     map_osm.save("./map.html")
 
-    map_refreshed.emit()
+    signals.map_refreshed.emit()
 
 def enrollBoard(user_id, title, contents, category, longitude, latitude):
     sql = "insert `db_teamproject`.`board`(`user_id`, `title`, `category`, `contents`, `recommends`, `longitude`, `latitude`)" \

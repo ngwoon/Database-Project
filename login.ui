@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>351</width>
-    <height>112</height>
+    <width>357</width>
+    <height>147</height>
    </rect>
   </property>
   <property name="contextMenuPolicy">
@@ -53,6 +53,32 @@
    </property>
    <property name="text">
     <string>Enter</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="signUpCheckbox">
+   <property name="geometry">
+    <rect>
+     <x>70</x>
+     <y>110</y>
+     <width>93</width>
+     <height>18</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string> Sign up</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="signOutCheckbox">
+   <property name="geometry">
+    <rect>
+     <x>200</x>
+     <y>110</y>
+     <width>93</width>
+     <height>18</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string> Sign out</string>
    </property>
   </widget>
  </widget>

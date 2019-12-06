@@ -32,13 +32,52 @@ def search(id, pw):
 
         return {"result" : "success", "user_id" : userinfo_rows[0], "nickname" : userinfo_rows[1]}
 
+
+#flag는 id 검사인지, nickname 검사인지를 구별하기 위해 사용됨
+#flag == 0이면 id검사, 1이면 nickname 검사
+def checkDuplication(userstr, flag):
+
+    if flag == 0:
+        sql = "select * from user where user_id=%s"
+        curs.execute(sql, (userstr))
+        userinfo_rows = curs.fetchone()
+
+    else:
+        sql = "select * from userinfo where nickname=%s"
+        curs.execute(sql, (userstr))
+        userinfo_rows = curs.fetchone()
+
+    if userinfo_rows == None:
+        return True
+    else:
+        return False
+
+#id, password, email, phone_number 유효한 형태인지 확인
+def checkUserInfo(id, password, email, phone_number):
+    #id확인
+    if len(id) > 15:
+        return False
+
+    #password길이 확인
+    if len(password) > 16:
+        return False
+
+    #password
+    elif:
+        pass
+
+
+
+def signUp(user_id, password, nickname, name, email, phone_number):
+
+
 def getLocation(loc, signals):
 
     options = Options()
     # options.add_argument("start-maximized")
     # options.add_argument("--disable-infobars")
     # options.add_argument("--disable-extensions")
-    #options.add_argument('--headless')
+    # options.add_argument('--headless')
 
     options.add_argument("--use--fake-ui-for-media-stream")
     options.binary_location = "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"

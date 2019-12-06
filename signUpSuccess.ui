@@ -1,17 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Dialog</class>
- <widget class="QDialog" name="Dialog">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="windowModality">
+   <enum>Qt::WindowModal</enum>
+  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>243</width>
+    <width>246</width>
     <height>159</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Fail</string>
+   <string>Success</string>
   </property>
   <widget class="QPushButton" name="confirm">
    <property name="geometry">
@@ -42,7 +45,7 @@
     <enum>Qt::LeftToRight</enum>
    </property>
    <property name="text">
-    <string>로그인 실패</string>
+    <string>중복이 아닙니다!</string>
    </property>
    <property name="alignment">
     <set>Qt::AlignCenter</set>

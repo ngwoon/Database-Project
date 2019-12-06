@@ -15,8 +15,8 @@ loginsuccess_msgbox = uic.loadUiType("loginSuccess.ui")[0]
 loginfail_msgbox = uic.loadUiType("loginFail.ui")[0]
 
 signup_window = uic.loadUiType("signUp.ui")[0]
-signupsuccess_msgbox = uic.loadUiType("signUpSuccess.ui")[0]
-signupfail_msgbox = uic.loadUiType("signUpFail.ui")[0]
+notDuplicated_msgbox = uic.loadUiType("notDuplicated.ui")[0]
+duplicated_msgbox = uic.loadUiType("duplicated.ui")[0]
 
 board_window = uic.loadUiType("board2.ui")[0]
 writeboard_window = uic.loadUiType("writeboard.ui")[0]
@@ -108,6 +108,13 @@ class SignUpWindow(QWidget, signup_window):
             self.dup = SignUpFail()
 
     def signUpBtnClicked(self):
+        result = controller.checkUserInfo(self.idLineEdit.text, self.pwLineEdit.text, self.emailLineEdit.text, self.phoneLineEdit.text)
+        if result[0] == False:
+
+            #구현 필요!!!!
+            pass
+        else:
+            controller.signUp(self.idLineEdit.text, self.pwLineEdit.text, self.nickLineEdit.text, self.emailLineEdit.text, self.phoneLineEdit.text)
 
 
 class MainDisplay(QMainWindow, QObject, board_window):
@@ -200,14 +207,14 @@ class loginSuccessWindow(QDialog, loginsuccess_msgbox):
         self.confirm.clicked.connect(self.hide)
         self.show()
 
-class SignUpSuccess(QWidget, signupsuccess_msgbox):
+class SignUpSuccess(QWidget, notDuplicated_msgbox):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
         self.confirm.clicked.connect(self.hide)
         self.show()
 
-class SignUpFail(QWidget, signupfail_msgbox):
+class SignUpFail(QWidget, duplicated_msgbox):
     def __init__(self):
         super().__init__()
         self.setupUi(self)

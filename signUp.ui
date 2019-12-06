@@ -91,7 +91,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>닉네임</string>
+    <string>닉네임(10자 이내)</string>
    </property>
   </widget>
   <widget class="QLineEdit" name="phoneLineEdit">

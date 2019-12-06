@@ -11,6 +11,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 
+#비밀번호 문자열 검사 시 사용. 정규표현식
+import re
+
 conn = pymysql.connect(host='localhost', user='supervisor', password='1234', db='db_teamproject')
 curs = conn.cursor()
 
@@ -55,21 +58,42 @@ def checkDuplication(userstr, flag):
 #id, password, email, phone_number 유효한 형태인지 확인
 def checkUserInfo(id, password, email, phone_number):
     #id확인
-    if len(id) > 15:
-        return False
+    if len(id) > 15 or len(id) == 0:
+        return (False, -1)
 
     #password길이 확인
-    if len(password) > 16:
-        return False
+    if len(password) > 16 or len(password) == 0:
+        return (False, -2)
 
-    #password
-    elif:
-        pass
+    #password문자 + 숫자 조합인지 확인
+    if not re.search(r'\d', password) or not re.search(r'\D', password):
+        return (False, -3)
 
+    #이메일 형식 확인
+    if '@' not in email:
+        return (False, -4)
 
+    #전화번호 형식 확인
+    if len(phone_number) != 11:
+        return (False, -5)
+
+    return True
 
 def signUp(user_id, password, nickname, name, email, phone_number):
+    sql = "insert into user(user_id, password)" \
+          "values(%s, %s)"
 
+    curs.execute(sql, (user_id, password))
+
+    sql = "insert into userinfo(nickname, name, email)" \
+          "values(%s, %s, %s)"
+
+    curs.execute(sql, (nickname, name, email))
+
+    sql = "insert into phonenumber(phone_number)" \
+          "values(%s)"
+
+    curs.execute(sql, (phone_number))
 
 def getLocation(loc, signals):
 

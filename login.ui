@@ -58,7 +58,7 @@
   <widget class="QCheckBox" name="signUpCheckbox">
    <property name="geometry">
     <rect>
-     <x>70</x>
+     <x>20</x>
      <y>110</y>
      <width>93</width>
      <height>18</height>
@@ -71,7 +71,7 @@
   <widget class="QCheckBox" name="signOutCheckbox">
    <property name="geometry">
     <rect>
-     <x>200</x>
+     <x>130</x>
      <y>110</y>
      <width>93</width>
      <height>18</height>
@@ -79,6 +79,19 @@
    </property>
    <property name="text">
     <string> Sign out</string>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="findCheckbox">
+   <property name="geometry">
+    <rect>
+     <x>240</x>
+     <y>110</y>
+     <width>93</width>
+     <height>18</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string> Find id/pw</string>
    </property>
   </widget>
  </widget>

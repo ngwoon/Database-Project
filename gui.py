@@ -16,15 +16,16 @@ signup_window = uic.loadUiType("signUp.ui")[0]
 msgbox = uic.loadUiType("msgbox.ui")[0]
 checksignout_window = uic.loadUiType("checkSignOut.ui")[0]
 
+idorpw_window = uic.loadUiType("idorpw.ui")[0]
+findidpw_window = uic.loadUiType("findIdPw.ui")[0]
+
 board_window = uic.loadUiType("board.ui")[0]
 writeboard_window = uic.loadUiType("writeboard.ui")[0]
 showboard_window = uic.loadUiType("showBoard.ui")[0]
 
 
-
 # QT Designer에서 Application Modal로 설정하면 해당 창이 종료될 때 까지 다른 창에 접근 불가
 # .exec_()의 역할은 창이 꺼질 때까지 뒤의 코드가 실행되지 않기를 바랄 때 사용
-
 
 
 global user_id
@@ -41,6 +42,7 @@ class LoginWindow(QDialog, login_window):
         self.confirm.clicked.connect(self.confirmClicked)
         self.signUpCheckbox.clicked.connect(self.signUpClicked)
         self.signOutCheckbox.clicked.connect(self.signOutClicked)
+        self.findCheckbox.clicked.connect(self.findClicked)
 
     def confirmClicked(self):
         self.id = self.idLabel.text()
@@ -48,7 +50,7 @@ class LoginWindow(QDialog, login_window):
         self.idLabel.clear()
         self.pwLabel.clear()
 
-        self.result = controller.search(self.id, self.pw)
+        self.result = controller.loginSearch(self.id, self.pw)
 
         if self.result['result'] == "success":
             self.loginSuccess = Msgbox()
@@ -57,8 +59,8 @@ class LoginWindow(QDialog, login_window):
 
             global user_id
             global nickname
-            user_id = self.result['user_id']
-            nickname = self.result['nickname']
+            user_id = self.id
+            nickname = self.result
             self.hide()
 
             self.mainWindow = MainDisplay()
@@ -78,19 +80,81 @@ class LoginWindow(QDialog, login_window):
         self.pw = self.pwLabel.text()
         self.idLabel.clear()
         self.pwLabel.clear()
-        self.result = controller.search(self.id, self.pw)
+        self.result = controller.loginSearch(self.id, self.pw)
 
-        print("da")
         # 탈퇴할 아이디 및 비밀번호 일치 시
         if self.result['result'] == "success":
             global user_id
             user_id = self.id
             self.warning = CheckSignOutWindow()
+
         # 탈퇴할 이이디 및 비밀번호 잘못 입력 시
         else:
             self.wrongidpw = Msgbox()
             self.wrongidpw.setWindowTitle("Wrong input")
             self.wrongidpw.label.setText("일치하는 로그인 정보가 없습니다")
+
+    def findClicked(self):
+        self.findCheckbox.setCheckState(False)
+        self.idorpw = IdOrPw()
+
+
+class IdOrPw(QWidget, idorpw_window):
+    def __init__(self):
+        super().__init__()
+        self.setupUi(self)
+        self.idCheckbox.clicked.connect(self.idClicked)
+        self.pwCheckbox.clicked.connect(self.pwClicked)
+        self.show()
+
+    def idClicked(self):
+        self.hide()
+        self.findId = FindIdPw('id')
+    def pwClicked(self):
+        self.hide()
+        self.findPw = FindIdPw('pw')
+
+class FindIdPw(QWidget, findidpw_window):
+    def __init__(self, target):
+        super().__init__()
+        self.setupUi(self)
+        self.findButton.clicked.connect(self.findBtnClicked)
+        self.target = target
+
+        if target == 'id':
+            self.label1.setText("이메일")
+            self.label2.setText("닉네임")
+        else:
+            self.label1.setText("아이디")
+            self.label2.setText("전화번호")
+
+        self.show()
+
+    def findBtnClicked(self):
+        self.hide()
+
+        if self.target == 'id':
+            self.result = controller.findIdSearch(self.lineEdit1.text(), self.lineEdit2.text())
+
+            self.idInfo = Msgbox()
+            if self.result['result'] == "success":
+                self.idInfo.setWindowTitle("ID Found")
+                self.idInfo.label.setText("고객님의 아이디는 " + self.result['data'] + " 입니다")
+            else:
+                self.idInfo.setWindowTitle("Fail")
+                self.idInfo.label.setText("정보와 일치하는 아이디가 없습니다")
+        else:
+            self.result = controller.findPwSearch(self.lineEdit1.text(), self.lineEdit2.text())
+
+            self.pwInfo = Msgbox()
+            if self.result['result'] == "success":
+                self.pwInfo.setWindowTitle("PW Found")
+                self.pwInfo.label.setText("고객님의 비밀번호는 " + self.result['data'] + " 입니다")
+
+            else:
+                self.pwInfo.setWindowTitle("Fail")
+                self.pwInfo.label.setText("정보와 일치하는 비밀번호가 없습니다")
+
 
 class SignUpWindow(QWidget, signup_window):
     def __init__(self):

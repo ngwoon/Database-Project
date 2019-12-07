@@ -21,19 +21,45 @@ class Signals(QObject):
     map_refreshed = pyqtSignal()
 
 #쿼리를 DB에 날려 원하는 투플만 뽑아오는 것이 모든 투플을 뽑아 파이썬에서 탐색하는 것 보다 성능이 훨씬 좋다. (log(n) 과 n 타임 차이)
-def search(id, pw):
+def loginSearch(id, pw):
+
     sql = "select * from user where user_id=%s and password=%s"
     curs.execute(sql, (id, pw))
     user_rows = curs.fetchone()
 
     if user_rows == None:
-        return {"result" : "fail", "user_id" : "", "nickname" : ""}
+        return {"result" : "fail", "data" : None}
     else:
-        sql = "select user_id, nickname from userinfo where user_id = %s"
+        sql = "select nickname from userinfo where user_id=%s"
         curs.execute(sql, (user_rows[0]))
         userinfo_rows = curs.fetchone()
 
-        return {"result" : "success", "user_id" : userinfo_rows[0], "nickname" : userinfo_rows[1]}
+        return {"result" : "success", "nickname" : userinfo_rows[0]}
+
+
+def findIdSearch(email, nickname):
+    sql = "select user_id from userinfo where email=%s and nickname=%s"
+
+    curs.execute(sql, (email, nickname))
+    userinfo_rows = curs.fetchone()
+
+    if userinfo_rows == None:
+        return {"result": "fail", "data": None}
+    else:
+        return {"result": "success", "data": userinfo_rows[0]}
+
+def findPwSearch(id, phone_number):
+    sql = "select password, phone_number from phonenumber p, user u where p.user_id=u.user_id and p.user_id=%s"
+
+    curs.execute(sql, id)
+    phone_rows = curs.fetchall()
+
+    if phone_rows == None:
+        return {"result": "fail", "data": None}
+    else:
+        for pn in phone_rows:
+            if pn[1] == phone_number:
+                return {"result": "success", "data": pn[0]}
 
 
 #flag는 id 검사인지, nickname 검사인지를 구별하기 위해 사용됨
@@ -113,7 +139,6 @@ def signOut(user_id):
     curs.execute(sql, (user_id))
 
     conn.commit()
-
 
 def getLocation(loc, signals):
 

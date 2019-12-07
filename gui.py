@@ -11,14 +11,11 @@ from PyQt5.QtCore import pyqtSignal, pyqtSlot
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 
 login_window = uic.loadUiType("login.ui")[0]
-loginsuccess_msgbox = uic.loadUiType("loginSuccess.ui")[0]
-loginfail_msgbox = uic.loadUiType("loginFail.ui")[0]
-
 signup_window = uic.loadUiType("signUp.ui")[0]
-notDuplicated_msgbox = uic.loadUiType("notDuplicated.ui")[0]
-duplicated_msgbox = uic.loadUiType("duplicated.ui")[0]
 
-board_window = uic.loadUiType("board2.ui")[0]
+msgbox = uic.loadUiType("msgbox.ui")[0]
+
+board_window = uic.loadUiType("board.ui")[0]
 writeboard_window = uic.loadUiType("writeboard.ui")[0]
 showboard_window = uic.loadUiType("showBoard.ui")[0]
 
@@ -26,7 +23,7 @@ global user_id
 global nickname
 global loc
 
-class login(QDialog, login_window):
+class LoginWindow(QDialog, login_window):
     def __init__(self, parent=None):
         super().__init__()
         self.id = "None"
@@ -46,7 +43,7 @@ class login(QDialog, login_window):
         self.result = controller.search(self.id, self.pw)
 
         if self.result['result'] == "success":
-            self.loginSuccess = loginSuccessWindow()
+            self.loginSuccess = Msgbox()
             self.loginSuccess.label.setText("환영합니다. " + self.id + "님")
             self.loginSuccess.exec_()
 
@@ -54,12 +51,13 @@ class login(QDialog, login_window):
             global nickname
             user_id = self.result['user_id']
             nickname = self.result['nickname']
-            loginWindow.hide()
+            self.hide()
 
             self.mainWindow = MainDisplay()
 
         else:
-            self.loginFail = loginFailWindow()
+            self.loginFail = Msgbox()
+            self.loginFail.label.setText("로그인 실패")
             self.loginFail.exec_()
 
     def signUpClicked(self):
@@ -76,8 +74,10 @@ class SignUpWindow(QWidget, signup_window):
         super().__init__()
         self.setupUi(self)
 
+        # 중복검사 체크하는 변수
         self.idChecked = False
         self.nickChecked = False
+
         self.idCheckButton.clicked.connect(self.idBtnClicked)
         self.nickCheckButton.clicked.connect(self.nickBtnClicked)
         self.signUpButton.clicked.connect(self.signUpBtnClicked)
@@ -89,11 +89,18 @@ class SignUpWindow(QWidget, signup_window):
             if self.idChecked and self.nickChecked:
                 self.signUpButton.setEnabled(True)
 
-            self.nodup = SignUpSuccess()
+            self.nodup = Msgbox()
+            self.nodup.setWindowTitle("Success")
+            self.nodup.label.setText("사용 가능한 ID입니다!")
+            self.nodup.exec_()
         else:
             self.idChecked = False
             self.signUpButton.setEnabled(False)
-            self.dup = SignUpFail()
+
+            self.dup = Msgbox()
+            self.dup.setWindowTitle("Fail")
+            self.dup.label.setText("이미 사용 중인 ID입니다")
+            self.dup.exec_()
 
     def nickBtnClicked(self):
         if controller.checkDuplication(self.nickLineEdit.text(), 1):
@@ -101,20 +108,47 @@ class SignUpWindow(QWidget, signup_window):
             if self.idChecked and self.nickChecked:
                 self.signUpButton.setEnabled(True)
 
-            self.nodup = SignUpSuccess()
+            self.nodup = Msgbox()
+            self.nodup.setWindowTitle("Success")
+            self.nodup.label.setText("사용 가능한 닉네임입니다!")
+            self.nodup.exec_()
         else:
             self.nickChecked = False
             self.signUpButton.setEnabled(False)
-            self.dup = SignUpFail()
+
+            self.dup = Msgbox()
+            self.dup.setWindowTitle("Fail")
+            self.dup.label.setText("이미 사용 중인 닉네임입니다")
+            self.dup.exec_()
 
     def signUpBtnClicked(self):
-        result = controller.checkUserInfo(self.idLineEdit.text, self.pwLineEdit.text, self.emailLineEdit.text, self.phoneLineEdit.text)
-        if result[0] == False:
+        self.result = controller.checkUserInfo(self.idLineEdit.text(), self.pwLineEdit.text(), self.emailLineEdit.text(), self.phoneLineEdit.text())
+        self.infoMsgbox = Msgbox()
+        if self.result[0] == False:
+            self.infoMsgbox.setWindowTitle("Fail")
+            if self.result[1] == -1:
+                self.infoMsgbox.label.setText("아이디가 너무 길거나 짧습니다")
+            elif self.result[1] == -2:
+                self.infoMsgbox.label.setText("비밀번호가 너무 길거나 짧습니다")
+            elif self.result[1] == -3:
+                self.infoMsgbox.label.setText("비밀번호는 영문과 숫자를 혼용해 주세요")
+            elif self.result[1] == -4:
+                self.infoMsgbox.label.setText("잘못된 이메일 형식")
+            elif self.result[1] == -5:
+                self.infoMsgbox.label.setText("잘못된 전화번호 길이")
+            else:
+                self.infoMsgbox.label.setText("잘못된 전화번호 형식")
 
-            #구현 필요!!!!
-            pass
+            self.infoMsgbox.exec_()
+
         else:
-            controller.signUp(self.idLineEdit.text, self.pwLineEdit.text, self.nickLineEdit.text, self.emailLineEdit.text, self.phoneLineEdit.text)
+            self.infoMsgbox.setWindowTitle("Success")
+            self.infoMsgbox.label.setText("회원가입 성공")
+            controller.signUp(self.idLineEdit.text(), self.pwLineEdit.text(), self.nickLineEdit.text(), self.nameLineEdit.text(), self.emailLineEdit.text(), self.phoneLineEdit.text())
+
+            self.hide()
+            self.login = LoginWindow()
+            #self.login.exec_()
 
 
 class MainDisplay(QMainWindow, QObject, board_window):
@@ -193,28 +227,7 @@ class showBoard(QWidget, showboard_window):
         # self.searchThread = threading.Thread(target=controller.searchBoard, args=(self.content, self.category, self.distance, self.boundary, loc['latitude'], loc['longitude']))
         # self.searchThread.start()
 
-class loginFailWindow(QDialog, loginfail_msgbox):
-    def __init__(self):
-        super().__init__()
-        self.setupUi(self)
-        self.confirm.clicked.connect(self.hide)
-        self.show()
-
-class loginSuccessWindow(QDialog, loginsuccess_msgbox):
-    def __init__(self):
-        super().__init__()
-        self.setupUi(self)
-        self.confirm.clicked.connect(self.hide)
-        self.show()
-
-class SignUpSuccess(QWidget, notDuplicated_msgbox):
-    def __init__(self):
-        super().__init__()
-        self.setupUi(self)
-        self.confirm.clicked.connect(self.hide)
-        self.show()
-
-class SignUpFail(QWidget, duplicated_msgbox):
+class Msgbox(QDialog, msgbox):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
@@ -223,5 +236,5 @@ class SignUpFail(QWidget, duplicated_msgbox):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    loginWindow = login()
+    loginWindow = LoginWindow()
     app.exec_()

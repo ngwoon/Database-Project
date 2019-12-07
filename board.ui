@@ -6,99 +6,82 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>861</width>
-    <height>596</height>
+    <width>758</width>
+    <height>805</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Main</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QTabWidget" name="tabWidget">
+   <widget class="QPushButton" name="showlist">
     <property name="geometry">
      <rect>
       <x>0</x>
-      <y>0</y>
-      <width>861</width>
-      <height>601</height>
+      <y>680</y>
+      <width>381</width>
+      <height>111</height>
      </rect>
     </property>
-    <property name="currentIndex">
-     <number>0</number>
+    <property name="text">
+     <string>글 목록 보기</string>
     </property>
-    <widget class="QWidget" name="tab">
-     <attribute name="title">
-      <string>Tab 1</string>
-     </attribute>
-     <widget class="QPushButton" name="pushButton">
-      <property name="geometry">
-       <rect>
-        <x>680</x>
-        <y>110</y>
-        <width>81</width>
-        <height>31</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>검색</string>
-      </property>
-     </widget>
-     <widget class="QLineEdit" name="lineEdit">
-      <property name="geometry">
-       <rect>
-        <x>90</x>
-        <y>110</y>
-        <width>571</width>
-        <height>31</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QListView" name="listView_2">
-      <property name="geometry">
-       <rect>
-        <x>-5</x>
-        <y>-9</y>
-        <width>871</width>
-        <height>591</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QTableView" name="tableView">
-      <property name="geometry">
-       <rect>
-        <x>85</x>
-        <y>171</y>
-        <width>681</width>
-        <height>351</height>
-       </rect>
-      </property>
-      <property name="sizeAdjustPolicy">
-       <enum>QAbstractScrollArea::AdjustToContentsOnFirstShow</enum>
-      </property>
-      <property name="selectionBehavior">
-       <enum>QAbstractItemView::SelectRows</enum>
-      </property>
-     </widget>
-     <zorder>listView_2</zorder>
-     <zorder>pushButton</zorder>
-     <zorder>lineEdit</zorder>
-     <zorder>tableView</zorder>
-    </widget>
    </widget>
-   <widget class="QListView" name="listView">
+   <widget class="QPushButton" name="write">
     <property name="geometry">
      <rect>
-      <x>-5</x>
-      <y>-9</y>
-      <width>871</width>
-      <height>611</height>
+      <x>380</x>
+      <y>680</y>
+      <width>381</width>
+      <height>111</height>
      </rect>
     </property>
+    <property name="text">
+     <string>게시글 작성</string>
+    </property>
    </widget>
-   <zorder>listView</zorder>
-   <zorder>tabWidget</zorder>
+   <widget class="QPushButton" name="refresh">
+    <property name="geometry">
+     <rect>
+      <x>650</x>
+      <y>600</y>
+      <width>101</width>
+      <height>71</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>새로고침</string>
+    </property>
+   </widget>
+   <widget class="QWebEngineView" name="map">
+    <property name="geometry">
+     <rect>
+      <x>-1</x>
+      <y>-1</y>
+      <width>761</width>
+      <height>681</height>
+     </rect>
+    </property>
+    <property name="url">
+     <url>
+      <string>about:blank</string>
+     </url>
+    </property>
+   </widget>
+   <zorder>map</zorder>
+   <zorder>showlist</zorder>
+   <zorder>write</zorder>
+   <zorder>refresh</zorder>
   </widget>
+  <widget class="QStatusBar" name="statusbar"/>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QWebEngineView</class>
+   <extends>QWidget</extends>
+   <header location="global">QtWebEngineWidgets/QWebEngineView</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

@@ -56,6 +56,12 @@ def checkDuplication(userstr, flag):
         return False
 
 #id, password, email, phone_number 유효한 형태인지 확인
+# -1 : id 길이 오류
+# -2 : pw 길이 오류
+# -3 : pw 조합 오류
+# -4 : email 형식 오류
+# -5 : 전화번호 길이 오류
+# -6 : 전화번호 형식 오류
 def checkUserInfo(id, password, email, phone_number):
     #id확인
     if len(id) > 15 or len(id) == 0:
@@ -73,11 +79,15 @@ def checkUserInfo(id, password, email, phone_number):
     if '@' not in email:
         return (False, -4)
 
-    #전화번호 형식 확인
+    #전화번호 길이 확인
     if len(phone_number) != 11:
         return (False, -5)
 
-    return True
+    #전화번호 형식 확인
+    if not re.search(r'\d', phone_number):
+        return (False, -6)
+
+    return (True, 0)
 
 def signUp(user_id, password, nickname, name, email, phone_number):
     sql = "insert into user(user_id, password)" \
@@ -85,15 +95,18 @@ def signUp(user_id, password, nickname, name, email, phone_number):
 
     curs.execute(sql, (user_id, password))
 
-    sql = "insert into userinfo(nickname, name, email)" \
-          "values(%s, %s, %s)"
+    sql = "insert into userinfo(user_id, nickname, name, email)" \
+          "values(%s, %s, %s, %s)"
 
-    curs.execute(sql, (nickname, name, email))
+    curs.execute(sql, (user_id, nickname, name, email))
 
-    sql = "insert into phonenumber(phone_number)" \
-          "values(%s)"
+    sql = "insert into phonenumber(user_id, phone_number)" \
+          "values(%s, %s)"
 
-    curs.execute(sql, (phone_number))
+    curs.execute(sql, (user_id, phone_number))
+
+    conn.commit()
+
 
 def getLocation(loc, signals):
 

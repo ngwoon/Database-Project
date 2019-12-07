@@ -164,7 +164,6 @@ class SignUpWindow(QWidget, signup_window):
             controller.signUp(self.idLineEdit.text(), self.pwLineEdit.text(), self.nickLineEdit.text(), self.nameLineEdit.text(), self.emailLineEdit.text(), self.phoneLineEdit.text())
 
             self.hide()
-            self.login = LoginWindow()
 
 class MainDisplay(QMainWindow, QObject, board_window):
     def __init__(self):

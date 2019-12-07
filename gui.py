@@ -14,10 +14,18 @@ login_window = uic.loadUiType("login.ui")[0]
 signup_window = uic.loadUiType("signUp.ui")[0]
 
 msgbox = uic.loadUiType("msgbox.ui")[0]
+checksignout_window = uic.loadUiType("checkSignOut.ui")[0]
 
 board_window = uic.loadUiType("board.ui")[0]
 writeboard_window = uic.loadUiType("writeboard.ui")[0]
 showboard_window = uic.loadUiType("showBoard.ui")[0]
+
+
+
+# QT Designer에서 Application Modal로 설정하면 해당 창이 종료될 때 까지 다른 창에 접근 불가
+# .exec_()의 역할은 창이 꺼질 때까지 뒤의 코드가 실행되지 않기를 바랄 때 사용
+
+
 
 global user_id
 global nickname
@@ -31,8 +39,8 @@ class LoginWindow(QDialog, login_window):
         self.setupUi(self)
         self.show()
         self.confirm.clicked.connect(self.confirmClicked)
-        self.signUpCheckbox.stateChanged.connect(self.signUpClicked)
-        self.signOutCheckbox.stateChanged.connect(self.signOutClicked)
+        self.signUpCheckbox.clicked.connect(self.signUpClicked)
+        self.signOutCheckbox.clicked.connect(self.signOutClicked)
 
     def confirmClicked(self):
         self.id = self.idLabel.text()
@@ -61,13 +69,28 @@ class LoginWindow(QDialog, login_window):
             self.loginFail.exec_()
 
     def signUpClicked(self):
-        self.hide()
+        self.signUpCheckbox.setCheckState(False)
         self.signup = SignUpWindow()
 
     def signOutClicked(self):
-        self.hide()
-        #self.signout = SignOutWindow()
+        self.signOutCheckbox.setCheckState(False)
+        self.id = self.idLabel.text()
+        self.pw = self.pwLabel.text()
+        self.idLabel.clear()
+        self.pwLabel.clear()
+        self.result = controller.search(self.id, self.pw)
 
+        print("da")
+        # 탈퇴할 아이디 및 비밀번호 일치 시
+        if self.result['result'] == "success":
+            global user_id
+            user_id = self.id
+            self.warning = CheckSignOutWindow()
+        # 탈퇴할 이이디 및 비밀번호 잘못 입력 시
+        else:
+            self.wrongidpw = Msgbox()
+            self.wrongidpw.setWindowTitle("Wrong input")
+            self.wrongidpw.label.setText("일치하는 로그인 정보가 없습니다")
 
 class SignUpWindow(QWidget, signup_window):
     def __init__(self):
@@ -92,7 +115,6 @@ class SignUpWindow(QWidget, signup_window):
             self.nodup = Msgbox()
             self.nodup.setWindowTitle("Success")
             self.nodup.label.setText("사용 가능한 ID입니다!")
-            self.nodup.exec_()
         else:
             self.idChecked = False
             self.signUpButton.setEnabled(False)
@@ -100,7 +122,6 @@ class SignUpWindow(QWidget, signup_window):
             self.dup = Msgbox()
             self.dup.setWindowTitle("Fail")
             self.dup.label.setText("이미 사용 중인 ID입니다")
-            self.dup.exec_()
 
     def nickBtnClicked(self):
         if controller.checkDuplication(self.nickLineEdit.text(), 1):
@@ -111,7 +132,6 @@ class SignUpWindow(QWidget, signup_window):
             self.nodup = Msgbox()
             self.nodup.setWindowTitle("Success")
             self.nodup.label.setText("사용 가능한 닉네임입니다!")
-            self.nodup.exec_()
         else:
             self.nickChecked = False
             self.signUpButton.setEnabled(False)
@@ -119,7 +139,6 @@ class SignUpWindow(QWidget, signup_window):
             self.dup = Msgbox()
             self.dup.setWindowTitle("Fail")
             self.dup.label.setText("이미 사용 중인 닉네임입니다")
-            self.dup.exec_()
 
     def signUpBtnClicked(self):
         self.result = controller.checkUserInfo(self.idLineEdit.text(), self.pwLineEdit.text(), self.emailLineEdit.text(), self.phoneLineEdit.text())
@@ -139,8 +158,6 @@ class SignUpWindow(QWidget, signup_window):
             else:
                 self.infoMsgbox.label.setText("잘못된 전화번호 형식")
 
-            self.infoMsgbox.exec_()
-
         else:
             self.infoMsgbox.setWindowTitle("Success")
             self.infoMsgbox.label.setText("회원가입 성공")
@@ -148,8 +165,6 @@ class SignUpWindow(QWidget, signup_window):
 
             self.hide()
             self.login = LoginWindow()
-            #self.login.exec_()
-
 
 class MainDisplay(QMainWindow, QObject, board_window):
     def __init__(self):
@@ -233,6 +248,27 @@ class Msgbox(QDialog, msgbox):
         self.setupUi(self)
         self.confirm.clicked.connect(self.hide)
         self.show()
+
+class CheckSignOutWindow(QWidget, checksignout_window):
+    def __init__(self):
+        super().__init__()
+        self.setupUi(self)
+        self.confirm.clicked.connect(self.confirmClicked)
+        self.cancel.clicked.connect(self.cancelClicked)
+        self.show()
+
+    def confirmClicked(self):
+        self.hide()
+
+        global user_id
+        controller.signOut(user_id)
+
+        self.confirmSignOut = Msgbox()
+        self.confirmSignOut.setWindowTitle("Good Bye")
+        self.confirmSignOut.label.setText("정상적으로 탈퇴 되었습니다")
+
+    def cancelClicked(self):
+        self.hide()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

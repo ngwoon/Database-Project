@@ -107,6 +107,13 @@ def signUp(user_id, password, nickname, name, email, phone_number):
 
     conn.commit()
 
+def signOut(user_id):
+    sql = "delete from user where user_id=%s"
+
+    curs.execute(sql, (user_id))
+
+    conn.commit()
+
 
 def getLocation(loc, signals):
 

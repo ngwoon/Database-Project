@@ -249,7 +249,6 @@ class MainDisplay(QMainWindow, QObject, board_window):
         self.getLocThread.start()
         self.show()
 
-
     #폴더 내 html파일을 webEngineView에 등록하고 show
     @pyqtSlot()
     def load(self):
@@ -257,6 +256,9 @@ class MainDisplay(QMainWindow, QObject, board_window):
             os.path.split(os.path.abspath(__file__))[0] + r'\map.html'
         ))
         self.map.show()
+        global loc
+        print(loc)
+
     def showClicked(self):
         self.showBoardWindow = ShowBoard()
     def writeClicked(self):

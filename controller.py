@@ -171,14 +171,10 @@ def getLocation(loc, signals):
     folium.Marker([parsed[0].text, parsed[1].text]).add_to(map_osm)
     map_osm.save("./map.html")
 
+    loc['longitude'] = parsed[1].text
+    loc['latitude'] = parsed[0].text
+
     signals.map_refreshed.emit()
-
-
-
-
-
-
-
 
 
 def enrollBoard(user_id, title, contents, category, loc, signals):
@@ -227,7 +223,7 @@ def searchBoards(loc, searchKeyword, category, distance, searchType):
     elif searchType == "작성자":
         sql += "u.nickname LIKE %s "
     elif searchType == "내용":
-        sql += "b.content LIKE %s "
+        sql += "b.contents LIKE %s "
 
     sql += "ORDER BY b.board_id"
 
@@ -275,14 +271,9 @@ def plusRecommendCount(board_id, signals):
 
 def addReply(board_id, user_id, contents, signals):
     sql = "INSERT INTO reply (user_id, board_id, contents, date) " \
-          "VALUE (%s, %s, %s, now())"
-
+          "VALUE(%s, %s, %s, now())"
     curs.execute(sql, (user_id, board_id, contents))
     conn.commit()
 
     signals.reply_added.emit()
-
-
-
-
 

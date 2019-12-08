@@ -145,7 +145,7 @@ def signOut(user_id):
 
     conn.commit()
 
-def getLocation(loc, signals):
+def getLocation(signals):
 
     options = Options()
     # options.add_argument("start-maximized")
@@ -171,10 +171,9 @@ def getLocation(loc, signals):
     folium.Marker([parsed[0].text, parsed[1].text]).add_to(map_osm)
     map_osm.save("./map.html")
 
-    loc['longitude'] = parsed[1].text
-    loc['latitude'] = parsed[0].text
-
     signals.map_refreshed.emit()
+
+    return {'latitude' : float(parsed[0].text), 'longitude' : float(parsed[1].text)}
 
 
 def enrollBoard(user_id, title, contents, category, loc, signals):

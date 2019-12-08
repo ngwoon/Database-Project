@@ -245,9 +245,13 @@ class MainDisplay(QMainWindow, QObject, board_window):
         #이 부분에 처음 html화면 띄우는 init 코드가 와야함
         global loc
         loc= {"latitude" : 0.0, "longitude" : 0.0}
-        self.getLocThread = threading.Thread(target=controller.getLocation, args=(loc, self.signals))
+        self.getLocThread = threading.Thread(target=self.updateLocation)
         self.getLocThread.start()
         self.show()
+
+    def updateLocation(self):
+        global loc
+        loc = controller.getLocation(self.signals)
 
     #폴더 내 html파일을 webEngineView에 등록하고 show
     @pyqtSlot()
@@ -256,8 +260,6 @@ class MainDisplay(QMainWindow, QObject, board_window):
             os.path.split(os.path.abspath(__file__))[0] + r'\map.html'
         ))
         self.map.show()
-        global loc
-        print(loc)
 
     def showClicked(self):
         self.showBoardWindow = ShowBoard()
@@ -265,7 +267,7 @@ class MainDisplay(QMainWindow, QObject, board_window):
         self.writeBoardWindow = WriteBoard()
     def refreshClicked(self):
         global loc
-        self.getLocThread = threading.Thread(target=controller.getLocation, args=(loc, self.signals))
+        self.getLocThread = threading.Thread(target=self.updateLocation)
         self.getLocThread.start()
 
 

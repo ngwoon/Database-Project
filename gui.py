@@ -10,18 +10,21 @@ from PyQt5.QtCore import QObject, QUrl
 from PyQt5.QtCore import pyqtSignal, pyqtSlot
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 
-login_window = uic.loadUiType("login.ui")[0]
-signup_window = uic.loadUiType("signUp.ui")[0]
+login_window = uic.loadUiType("./ui/login.ui")[0]
+signup_window = uic.loadUiType("./ui/signUp.ui")[0]
 
-msgbox = uic.loadUiType("msgbox.ui")[0]
-checksignout_window = uic.loadUiType("checkSignOut.ui")[0]
+msgbox = uic.loadUiType("./ui/msgbox.ui")[0]
+checksignout_window = uic.loadUiType("./ui/checkSignOut.ui")[0]
 
-idorpw_window = uic.loadUiType("idorpw.ui")[0]
-findidpw_window = uic.loadUiType("findIdPw.ui")[0]
+idorpw_window = uic.loadUiType("./ui/idorpw.ui")[0]
+findidpw_window = uic.loadUiType("./ui/findIdPw.ui")[0]
 
-board_window = uic.loadUiType("board.ui")[0]
-writeboard_window = uic.loadUiType("writeboard.ui")[0]
-showboard_window = uic.loadUiType("showBoard.ui")[0]
+board_window = uic.loadUiType("./ui/board.ui")[0]
+writeboard_window = uic.loadUiType("./ui/writeboard.ui")[0]
+showboard_window = uic.loadUiType("./ui/showBoard.ui")[0]
+boardContents_window = uic.loadUiType("./ui/boardContents.ui")[0]
+reply_window = uic.loadUiType("./ui/reply.ui")[0]
+writeReply_window = uic.loadUiType("./ui/writeReply.ui")[0]
 
 
 # QT Designer에서 Application Modal로 설정하면 해당 창이 종료될 때 까지 다른 창에 접근 불가
@@ -255,7 +258,7 @@ class MainDisplay(QMainWindow, QObject, board_window):
         ))
         self.map.show()
     def showClicked(self):
-        self.showBoardWindow = showBoard()
+        self.showBoardWindow = ShowBoard()
     def writeClicked(self):
         self.writeBoardWindow = WriteBoard()
     def refreshClicked(self):
@@ -265,45 +268,293 @@ class MainDisplay(QMainWindow, QObject, board_window):
 
 
 class WriteBoard(QWidget, writeboard_window):
+    '''
+    [Elements]
+    titleTextLabel, categoryComboBox, contentTextLabel,
+    locInfoCheckBox, submitButton, cancelButton
+    '''
+
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.locInfoCheckBox.stateChanged.connect(self.checkBoxClicked)
-        self.submitButton.clicked.connect(self.submitButtonClicked)
+        self.signals = controller.Signals()
+
+        self.locInfoCheckBox.stateChanged.connect(self.onCheckBoxClicked)
+        self.submitButton.clicked.connect(self.onSubmitBtnClicked)
+        self.cancelButton.clicked.connect(self.onCancelBtnClicked)
+
         self.show()
 
-    def submitButtonClicked(self):
+    def onSubmitBtnClicked(self):
         global user_id, nickname, loc
-        
-        #문제 해결 필요
-        enrollthread = threading.Thread(target=controller.enrollBoard, args=(user_id, self.titleTextLabel.text(), self.contentTextLabel.toPlainText(), self.categoryComboBox.currentText(), loc['longitude'], loc['latitude'],))
-        enrollthread.start()
-        self.hide()
 
-    def checkBoxClicked(self):
+        title = self.titleTextLabel.text()
+        category = self.categoryComboBox.currentText()
+        contents = self.contentTextLabel.toPlainText()
+
+        controller.enrollBoard(user_id, title, contents, category, loc, self.signals)
+
+        self.close()
+
+    def onCancelBtnClicked(self):
+        self.close()
+
+    def onCheckBoxClicked(self):
         if self.locInfoCheckBox.isChecked():
             self.submitButton.setEnabled(True)
         else:
             self.submitButton.setEnabled(False)
 
-class showBoard(QWidget, showboard_window):
+
+class ShowBoard(QWidget, showboard_window):
+    boardList = []
+    boardBtnList = []
+
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.searchButton.clicked.connect(self.searchButtonClicked)
+
+        self.signals = controller.Signals()
+        self.signals.board_added.connect(self.updateBoardList)
+        self.signals.recommends_updated.connect(self.updateBoardList)
+
+        self.boardListScrollArea.setWidgetResizable(True)
+
+        self.inner = QFrame(self.boardListScrollArea)
+        self.inner.setLayout(QVBoxLayout())
+        self.boardListScrollArea.setWidget(self.inner)
+
+        self.getSurroundingBoards()
+
+        self.searchButton.clicked.connect(self.onSearchBtnClicked)
+
         self.show()
 
-    def searchButtonClicked(self):
+    def getSurroundingBoards(self):
         global loc
-        self.content = self.searchTextLabel.text()
-        self.category = self.categoryComboBox.currentText()
-        self.distance = self.distanceComboBox.currentText()
-        self.boundary = self.boundaryComboBox.currentText()
 
-        self.searchTextLabel.clear()
+        self.boardList = controller.searchSurroundingBoards(loc)
 
-        # self.searchThread = threading.Thread(target=controller.searchBoard, args=(self.content, self.category, self.distance, self.boundary, loc['latitude'], loc['longitude']))
-        # self.searchThread.start()
+        # 목록에 게시글 채우기
+        self.fillBoards()
+
+    def fillBoards(self):
+        tempBtnList = []
+        i = 0
+        for board in self.boardList:
+            tempFrame = QFrame()
+            tempFrame.setLayout(QGridLayout())
+            tempFrame.setFrameShape(QFrame.Box)
+
+            tempFrame.layout().addWidget(QLabel(str(board[0])), i, 0, 1, 1)
+            boardTitleBtn = QPushButton(board[1])
+            boardTitleBtn.clicked.connect(self.onBoardClicked)
+            tempFrame.layout().addWidget(boardTitleBtn, i, 1, 1, 7)
+            tempFrame.layout().addWidget(QLabel(board[2]), i, 8, 1, 2)
+            tempFrame.layout().addWidget(QLabel(str(board[3])), i, 10, 1, 1)
+            tempFrame.layout().addWidget(QLabel(board[4]), i, 11, 1, 1)
+
+            self.inner.layout().addWidget(tempFrame)
+            tempBtnList.append((boardTitleBtn, i))
+
+            i += 1
+
+        self.boardBtnList = tempBtnList
+        self.inner.layout().addItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
+
+    def clearBoards(self):
+        for i in reversed(range(self.inner.layout().count())):
+            now = self.inner.layout().takeAt(i)
+            if now.widget() is not None:
+                now.widget().setParent(None)
+                self.inner.layout().removeWidget(now.widget())
+
+    def onSearchBtnClicked(self):
+        global loc
+
+        # 검색 요소 얻어오기
+        searchKeyword = self.searchTextLabel.text()
+        category = self.categoryComboBox.currentText()
+        distance = self.distanceComboBox.currentText()[0]
+        searchType = self.boundaryComboBox.currentText()
+
+        # controller 모듈에서 검색한 게시글 목록 얻기
+        self.boardList = controller.searchBoards(loc, searchKeyword, category, distance, searchType)
+
+        # 이전에 있던 게시글들 삭제
+        self.clearBoards()
+
+        # 목록에 게시글 채우기
+        self.fillBoards()
+
+    def onBoardClicked(self):
+        # 클릭한 게시글의 정보 얻어오기
+        clickedBtn = self.sender()
+        targetBoard = ()
+
+        for i in range(len(self.boardBtnList)):
+            if clickedBtn == self.boardBtnList[i][0]:
+                targetBoard = self.boardList[i]
+                break
+
+        boardInfos = controller.getBoardInfo(targetBoard[0])
+
+        # 게시글 정보를 바탕으로 게시글 윈도우 생성
+        self.boardContentsWindow = BoardContentsWindow(boardInfos, self.signals)
+
+    @pyqtSlot()
+    def updateBoardList(self):
+        self.onSearchBtnClicked()
+
+
+class BoardContentsWindow(QWidget, boardContents_window):
+    '''
+    [Elements]
+    boardTitle, boardCategory, boardWriter, boardContents,
+    gobackButton, recommendButton, replyButton
+    '''
+
+    # Info : board_id, nickname, title, category, contents, recommends
+    boardInfos = []
+
+    def __init__(self, boardInfos, signals):
+        super().__init__()
+        self.setupUi(self)
+        self.boardInfos = boardInfos
+        self.signals = signals
+
+        self.boardWriter.setText(self.boardInfos[1])
+        self.boardTitle.setText(self.boardInfos[2])
+        self.boardCategory.setText(self.boardInfos[3])
+        self.boardContents.setText(self.boardInfos[4])
+        self.recommendButton.setText("추천" + str(self.boardInfos[5]))
+        self.recommendButton.clicked.connect(self.onRecommendBtnClicked)
+        self.replyButton.clicked.connect(self.onReplyBtnClicked)
+        self.gobackButton.clicked.connect(self.onGobackBtnClicked)
+
+        self.show()
+
+    def onReplyBtnClicked(self):
+        # 댓글 보는 창 생성
+        # 댓글 가져와야되니까 board_id 넘겨주면서
+        self.replyWindow = ReplyWindow(self.boardInfos[0])
+
+    def onRecommendBtnClicked(self):
+        # 추천 수 1 올리고 비활성화
+        controller.plusRecommendCount(self.boardInfos[0], self.signals)
+
+        self.boardInfos = (self.boardInfos[0], self.boardInfos[1], self.boardInfos[2], self.boardInfos[3], self.boardInfos[4], self.boardInfos[5] + 1)
+        self.recommendButton.setText("추천" + str(self.boardInfos[5]))
+        self.recommendButton.setEnabled(False)
+
+    def onGobackBtnClicked(self):
+        self.close()
+
+
+class ReplyWindow(QWidget, reply_window):
+    '''
+    [Elements]
+    scrollArea, gobackButton, writeButton
+    '''
+
+    board_id = ""
+    # replies -> list of (reply_id, nickname, contents)
+    replies = []
+
+    def __init__(self, board_id):
+        super().__init__()
+        self.setupUi(self)
+
+        self.board_id = board_id
+        self.replies = controller.getReplies(self.board_id)
+        self.signals = controller.Signals()
+        self.signals.reply_added.connect(self.addReply)
+
+        self.scrollArea.setWidgetResizable(True)
+
+        self.inner = QFrame(self.scrollArea)
+        self.inner.setLayout(QVBoxLayout())
+        self.scrollArea.setWidget(self.inner)
+
+        self.fillReplies()
+
+        self.writeButton.clicked.connect(self.onWriteBtnClicked)
+        self.gobackButton.clicked.connect(self.onGobackBtnClicked)
+
+        self.show()
+
+    def fillReplies(self):
+        # 게시글의 댓글들을 채움
+        self.replies = controller.getReplies(self.board_id)
+
+        if len(self.replies) == 0:
+            return
+
+        for reply in self.replies:
+            self.inner.layout().addWidget(self.createReplyFrame(reply))
+
+        self.inner.layout().addItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
+
+    def createReplyFrame(self, reply):
+        # reply -> (nickname, contents)
+        frame = QFrame()
+        frame.setLayout(QGridLayout())
+        frame.setFrameShape(QFrame.Box)
+
+        frame.layout().addWidget(QLabel(reply[0]), 0, 0, 2, 2)
+        frame.layout().addWidget(QLabel(reply[1]), 2, 0, 2, 6)
+
+        return frame
+
+    def onWriteBtnClicked(self):
+        # 댓글 작성 창 생성
+        self.writeReplyWindow = WriteReplyWindow(self.board_id, self.signals)
+
+    def onGobackBtnClicked(self):
+        self.close()
+
+    @pyqtSlot()
+    def addReply(self):
+        for i in reversed(range(self.inner.layout().count())):
+            now = self.inner.layout().takeAt(i)
+            if now.widget() is not None:
+                now.widget().setParent(None)
+                self.inner.layout().removeWidget(now.widget())
+
+        self.fillReplies()
+
+
+class WriteReplyWindow(QWidget, writeReply_window):
+    '''
+    [Elements]
+    contentsEdit, submitButton, cancelButton
+    '''
+
+    board_id = ""
+
+    def __init__(self, board_id, signals):
+        super().__init__()
+        self.setupUi(self)
+
+        self.board_id = board_id
+        self.signals = signals
+
+        self.submitButton.clicked.connect(self.onSubmitBtnClicked)
+        self.cancelButton.clicked.connect(self.onCancelBtnClicked)
+
+        self.show()
+
+    def onSubmitBtnClicked(self):
+        global user_id
+
+        contents = self.contentsEdit.toPlainText()
+
+        controller.addReply(self.board_id, user_id, contents, self.signals)
+
+        self.close()
+
+    def onCancelBtnClicked(self):
+        self.close()
 
 class Msgbox(QDialog, msgbox):
     def __init__(self):

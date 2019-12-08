@@ -20,6 +20,11 @@ curs = conn.cursor()
 class Signals(QObject):
     map_refreshed = pyqtSignal()
 
+
+    board_added = pyqtSignal()
+    recommends_updated = pyqtSignal()
+    reply_added = pyqtSignal()
+
 #쿼리를 DB에 날려 원하는 투플만 뽑아오는 것이 모든 투플을 뽑아 파이썬에서 탐색하는 것 보다 성능이 훨씬 좋다. (log(n) 과 n 타임 차이)
 def loginSearch(id, pw):
 
@@ -168,32 +173,114 @@ def getLocation(loc, signals):
 
     signals.map_refreshed.emit()
 
-def enrollBoard(user_id, title, contents, category, longitude, latitude):
-    sql = "insert `db_teamproject`.`board`(`user_id`, `title`, `category`, `contents`, `recommends`, `longitude`, `latitude`)" \
-          "values(%s, %s, %s, %s, %s, %s, %s)"
-
-    try:
-        curs.execute(sql, (user_id, title, category, contents, 0, longitude, latitude))
-        conn.commit()
-
-    except Exception as ex:
-        print("에러 발생", ex)
 
 
-#검색 순서
-#distance를 통해 게시글 투플들을 우선 뽑아냄
-#category, boundary를 통해 추려진 게시글을 한 번더 추려냄
 
-def searchBoard(content, category, distance, boundary, latitude, longitude):
-    
-    #distance와 category를 사용해 투플 뽑아냄
-    #boundary에 따라 제목, 작성자, 혹은 내용 검색으로 바뀌기 때문에 동적인 검색은 파이썬 코드에서 진행
-    sql = "select board_id, title, content, nickname, recommends" \
-          "from (select * from board where (SELECT SQRT(POW(latitude - %s, 2) + POW(longitude - %s, 2)) <= %s) and (category = %s)) b, userinfo u" \
-          "where u.user_id == b.user_id"
 
-    curs.execute(sql, (latitude, longitude, distance, category))
-    boards = curs.fetchall()
+
+
+
+
+def enrollBoard(user_id, title, contents, category, loc, signals):
+    sql = "INSERT board (user_id, title, category, contents, recommends, longitude, latitude) " \
+          "VALUE (%s, %s, %s, %s, %s, %s, %s)"
+
+    curs.execute(sql, (user_id, title, category, contents, 0, loc["longitude"], loc["latitude"]))
+    conn.commit()
+
+    signals.board_added.emit()
+
+
+def searchSurroundingBoards(loc):
+    sql = "SELECT b.board_id, b.title, u.nickname, b.recommends, b.category " \
+          "FROM userinfo u, " \
+               "(SELECT * " \
+                "FROM board " \
+                "WHERE (6371*acos(cos(radians(%s))*cos(radians(latitude))*cos(radians(longitude)-radians(%s))+sin(radians(%s))*sin(radians(latitude)))) <= %s" \
+               ") b " \
+          "WHERE b.user_id = u.user_id " \
+          "ORDER BY b.board_id"
+
+    default_distance = 15
+    curs.execute(sql, (loc["latitude"], loc["longitude"], loc["latitude"], default_distance))
+    boardList = curs.fetchall()
+
+    return boardList
+
+
+def searchBoards(loc, searchKeyword, category, distance, searchType):
+    sql = "SELECT b.board_id, b.title, u.nickname, b.recommends, b.category " \
+          "FROM userinfo u, " \
+               "(SELECT * " \
+                "FROM board " \
+                "WHERE (6371*acos(cos(radians(%s))*cos(radians(latitude))*cos(radians(longitude)-radians(%s))+sin(radians(%s))*sin(radians(latitude)))) <= %s" \
+               ") b " \
+          "WHERE b.user_id = u.user_id AND " \
+
+    categorized = False
+    if category != "자유":
+        sql += "b.category = %s AND "
+        categorized = True
+
+    if searchType == "제목":
+        sql += "b.title LIKE %s "
+    elif searchType == "작성자":
+        sql += "u.nickname LIKE %s "
+    elif searchType == "내용":
+        sql += "b.content LIKE %s "
+
+    sql += "ORDER BY b.board_id"
+
+    if categorized:
+        curs.execute(sql, (loc["latitude"], loc["longitude"], loc["latitude"], distance, category, ("%" + searchKeyword + "%")))
+    else:
+        curs.execute(sql, (loc["latitude"], loc["longitude"], loc["latitude"], distance, ("%" + searchKeyword + "%")))
+
+    boardList = curs.fetchall()
+
+    return boardList
+
+
+def getBoardInfo(board_id):
+    sql = "SELECT b.board_id, u.nickname, b.title, b.category, b.contents, b.recommends " \
+          "FROM board b, userinfo u " \
+          "WHERE b.board_id = %s AND b.user_id = u.user_id"
+
+    curs.execute(sql, (board_id))
+    boardInfos = curs.fetchone()
+
+    return boardInfos
+
+
+def getReplies(board_id):
+    sql = "SELECT u.nickname, r.contents " \
+          "FROM reply r, userinfo u " \
+          "WHERE r.board_id = %s AND r.user_id = u.user_id " \
+          "ORDER BY r.date ASC"
+
+    curs.execute(sql, (board_id))
+    replies = curs.fetchall()
+
+    return replies
+
+
+def plusRecommendCount(board_id, signals):
+    sql = "UPDATE board SET recommends = recommends + 1 WHERE board_id = %s"
+
+    curs.execute(sql, (board_id))
+    conn.commit()
+
+    signals.recommends_updated.emit()
+
+
+def addReply(board_id, user_id, contents, signals):
+    sql = "INSERT INTO reply (user_id, board_id, contents, date) " \
+          "VALUE (%s, %s, %s, now())"
+
+    curs.execute(sql, (user_id, board_id, contents))
+    conn.commit()
+
+    signals.reply_added.emit()
 
 
 

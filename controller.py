@@ -14,39 +14,48 @@ from bs4 import BeautifulSoup
 #비밀번호 문자열 검사 시 사용. 정규표현식
 import re
 
-conn = pymysql.connect(host='localhost', user='supervisor', password='1234', db='db_teamproject')
-curs = conn.cursor()
+# conn = pymysql.connect(host='localhost', user='supervisor', password='1234', db='db_teamproject')
+# curs = conn.cursor()
 
 class Signals(QObject):
     map_refreshed = pyqtSignal()
-
-
     board_added = pyqtSignal()
     recommends_updated = pyqtSignal()
     reply_added = pyqtSignal()
 
 #쿼리를 DB에 날려 원하는 투플만 뽑아오는 것이 모든 투플을 뽑아 파이썬에서 탐색하는 것 보다 성능이 훨씬 좋다. (log(n) 과 n 타임 차이)
 def loginSearch(id, pw):
+    conn = pymysql.connect(host='localhost', user='supervisor', password='1234', db='db_teamproject')
+    curs = conn.cursor()
 
     sql = "select * from user where user_id=%s and password=%s"
     curs.execute(sql, (id, pw))
     user_rows = curs.fetchone()
 
     if user_rows == None:
+        conn.close()
         return {"result" : "fail", "data" : None}
     else:
         sql = "select nickname from userinfo where user_id=%s"
         curs.execute(sql, (user_rows[0]))
         userinfo_rows = curs.fetchone()
 
+        conn.close()
+
         return {"result" : "success", "nickname" : userinfo_rows[0]}
 
 
 def findIdSearch(email, nickname):
+
+    conn = pymysql.connect(host='localhost', user='supervisor', password='1234', db='db_teamproject')
+    curs = conn.cursor()
+
     sql = "select user_id from userinfo where email=%s and nickname=%s"
 
     curs.execute(sql, (email, nickname))
     userinfo_rows = curs.fetchone()
+
+    conn.close()
 
     if userinfo_rows == None:
         return {"result": "fail", "data": None}
@@ -54,10 +63,15 @@ def findIdSearch(email, nickname):
         return {"result": "success", "data": userinfo_rows[0]}
 
 def findPwSearch(id, phone_number):
+    conn = pymysql.connect(host='localhost', user='supervisor', password='1234', db='db_teamproject')
+    curs = conn.cursor()
+
     sql = "select password, phone_number from phonenumber p, user u where p.user_id=u.user_id and p.user_id=%s"
 
     curs.execute(sql, id)
     phone_rows = curs.fetchall()
+
+    conn.close()
 
     if phone_rows == None:
         return {"result": "fail", "data": None}
@@ -70,6 +84,8 @@ def findPwSearch(id, phone_number):
 #flag는 id 검사인지, nickname 검사인지를 구별하기 위해 사용됨
 #flag == 0이면 id검사, 1이면 nickname 검사
 def checkDuplication(userstr, flag):
+    conn = pymysql.connect(host='localhost', user='supervisor', password='1234', db='db_teamproject')
+    curs = conn.cursor()
 
     if flag == 0:
         sql = "select * from user where user_id=%s"
@@ -80,6 +96,8 @@ def checkDuplication(userstr, flag):
         sql = "select * from userinfo where nickname=%s"
         curs.execute(sql, (userstr))
         userinfo_rows = curs.fetchone()
+
+    conn.close()
 
     if userinfo_rows == None:
         return True
@@ -121,6 +139,9 @@ def checkUserInfo(id, password, email, phone_number):
     return (True, 0)
 
 def signUp(user_id, password, nickname, name, email, phone_number):
+    conn = pymysql.connect(host='localhost', user='supervisor', password='1234', db='db_teamproject')
+    curs = conn.cursor()
+
     sql = "insert into user(user_id, password)" \
           "values(%s, %s)"
 
@@ -138,12 +159,19 @@ def signUp(user_id, password, nickname, name, email, phone_number):
 
     conn.commit()
 
+    conn.close()
+
 def signOut(user_id):
+    conn = pymysql.connect(host='localhost', user='supervisor', password='1234', db='db_teamproject')
+    curs = conn.cursor()
+
     sql = "delete from user where user_id=%s"
 
     curs.execute(sql, (user_id))
 
     conn.commit()
+
+    conn.close()
 
 def getLocation(signals):
 
@@ -162,49 +190,94 @@ def getLocation(signals):
     wait = WebDriverWait(driver, timeout)
     soup = BeautifulSoup(driver.page_source, 'html.parser')
 
-    #parsed[0] = latitude, parsed[1] = longitude
     parsed = soup.find_all('td')
 
     driver.quit()
 
     map_osm = folium.Map(location=[parsed[0].text, parsed[1].text], zoom_start=17)
     folium.Marker([parsed[0].text, parsed[1].text]).add_to(map_osm)
-    map_osm.save("./map.html")
 
-    signals.map_refreshed.emit()
+    makeBoardPing(parsed, map_osm, signals)
 
     return {'latitude' : float(parsed[0].text), 'longitude' : float(parsed[1].text)}
 
 
+def makeBoardPing(parsed, map_osm, signals):
+    loc = {'latitude' : float(parsed[0].text), 'longitude' : float(parsed[1].text)}
+
+    boardList = searchSurroundingBoards(loc)
+
+    for item in boardList:
+        icon = None
+        if item[4] == "연애":
+            icon = folium.Icon(color="pink", icon="star")
+        elif item[4] == "고민":
+            icon = folium.Icon(color="lightgray", icon="star")
+        elif item[4] == "취미":
+            icon = folium.Icon(color="lightgreen", icon="star")
+        else:
+            icon = folium.Icon(color="blue", icon="star")
+        folium.Marker((item[-2], item[-1]), icon=icon).add_to(map_osm)
+
+    map_osm.save("./map.html")
+
+    signals.map_refreshed.emit()
+
+
 def enrollBoard(user_id, title, contents, category, loc, signals):
+
+    conn = pymysql.connect(host='localhost', user='supervisor', password='1234', db='db_teamproject')
+    curs = conn.cursor()
+
     sql = "INSERT board (user_id, title, category, contents, recommends, longitude, latitude) " \
           "VALUE (%s, %s, %s, %s, %s, %s, %s)"
 
     curs.execute(sql, (user_id, title, category, contents, 0, loc["longitude"], loc["latitude"]))
     conn.commit()
 
+    conn.close()
+
     signals.board_added.emit()
 
 
 def searchSurroundingBoards(loc):
-    sql = "SELECT b.board_id, b.title, u.nickname, b.recommends, b.category " \
+    conn = pymysql.connect(host='localhost', user='supervisor', password='1234', db='db_teamproject')
+    curs = conn.cursor()
+
+    # 정상게시물 추출
+    sql = "SELECT b.board_id, b.title, u.nickname, b.recommends, b.category, b.latitude, b.longitude " \
           "FROM userinfo u, " \
                "(SELECT * " \
                 "FROM board " \
-                "WHERE (6371*acos(cos(radians(%s))*cos(radians(latitude))*cos(radians(longitude)-radians(%s))+sin(radians(%s))*sin(radians(latitude)))) <= %s" \
+                "WHERE (6371*acos(cos(radians(%s))*cos(radians(latitude))*cos(radians(longitude)-radians(%s))+sin(radians(%s))*sin(radians(latitude)))) <= %s " \
                ") b " \
           "WHERE b.user_id = u.user_id " \
           "ORDER BY b.board_id"
 
     default_distance = 15
+    curs.execute(sql, (loc["latitude"], loc["longitude"], loc["latitude"], "15"))
+    boardList = list(curs.fetchall())
+
+    sql = "SELECT b.board_id, b.title, '알수없음' AS nickname, b.recommends, b.category, b.latitude, b.longitude " \
+          "FROM (SELECT * " \
+                "FROM board " \
+                "WHERE (6371*acos(cos(radians(%s))*cos(radians(latitude))*cos(radians(longitude)-radians(%s))+sin(radians(%s))*sin(radians(latitude)))) <= %s " \
+               ") b " \
+          "WHERE b.user_id is NULL" \
+
     curs.execute(sql, (loc["latitude"], loc["longitude"], loc["latitude"], default_distance))
-    boardList = curs.fetchall()
+    boardList += list(curs.fetchall())
+
+    conn.close()
 
     return boardList
 
 
 def searchBoards(loc, searchKeyword, category, distance, searchType):
-    sql = "SELECT b.board_id, b.title, u.nickname, b.recommends, b.category " \
+    conn = pymysql.connect(host='localhost', user='supervisor', password='1234', db='db_teamproject')
+    curs = conn.cursor()
+
+    sql1 = "SELECT b.board_id, b.title, u.nickname, b.recommends, b.category " \
           "FROM userinfo u, " \
                "(SELECT * " \
                 "FROM board " \
@@ -212,54 +285,99 @@ def searchBoards(loc, searchKeyword, category, distance, searchType):
                ") b " \
           "WHERE b.user_id = u.user_id AND " \
 
+    sql2 = "SELECT b.board_id, b.title, '알수없음' AS nickname, b.recommends, b.category " \
+          "FROM (SELECT * " \
+                "FROM board " \
+                "WHERE (6371*acos(cos(radians(%s))*cos(radians(latitude))*cos(radians(longitude)-radians(%s))+sin(radians(%s))*sin(radians(latitude)))) <= %s " \
+               ") b " \
+          "WHERE b.user_id is NULL AND "
+
     categorized = False
+    writer_type = False
     if category != "자유":
-        sql += "b.category = %s AND "
+        sql1 += "b.category = %s AND "
+        sql2 += "b.category = %s AND "
         categorized = True
 
     if searchType == "제목":
-        sql += "b.title LIKE %s "
+        sql1 += "b.title LIKE %s "
+        sql2 += "b.title LIKE %s "
     elif searchType == "작성자":
-        sql += "u.nickname LIKE %s "
+        sql1 += "u.nickname LIKE %s "
+        writer_type = True
     elif searchType == "내용":
-        sql += "b.contents LIKE %s "
-
-    sql += "ORDER BY b.board_id"
+        sql1 += "b.contents LIKE %s "
+        sql2 += "b.contents LIKE %s "
 
     if categorized:
-        curs.execute(sql, (loc["latitude"], loc["longitude"], loc["latitude"], distance, category, ("%" + searchKeyword + "%")))
+        curs.execute(sql1, (loc["latitude"], loc["longitude"], loc["latitude"], distance, category, ("%" + searchKeyword + "%")))
+        boardList = list(curs.fetchall())
+        if not writer_type:
+            curs.execute(sql2, (loc["latitude"], loc["longitude"], loc["latitude"], distance, category, ("%" + searchKeyword + "%")))
+            boardList += list(curs.fetchall())
     else:
-        curs.execute(sql, (loc["latitude"], loc["longitude"], loc["latitude"], distance, ("%" + searchKeyword + "%")))
+        curs.execute(sql1, (loc["latitude"], loc["longitude"], loc["latitude"], distance, ("%" + searchKeyword + "%")))
+        boardList = list(curs.fetchall())
+        if not writer_type:
+            curs.execute(sql2, (loc["latitude"], loc["longitude"], loc["latitude"], distance, ("%" + searchKeyword + "%")))
+            boardList += list(curs.fetchall())
 
-    boardList = curs.fetchall()
+    conn.close()
 
     return boardList
 
 
 def getBoardInfo(board_id):
-    sql = "SELECT b.board_id, u.nickname, b.title, b.category, b.contents, b.recommends " \
-          "FROM board b, userinfo u " \
-          "WHERE b.board_id = %s AND b.user_id = u.user_id"
+    conn = pymysql.connect(host='localhost', user='supervisor', password='1234', db='db_teamproject')
+    curs = conn.cursor()
 
+    sql = "SELECT board_id, user_id, title, category, contents, recommends FROM board WHERE board_id = %s"
     curs.execute(sql, (board_id))
-    boardInfos = curs.fetchone()
+    boardInfos = list(curs.fetchone())
+    user_id = boardInfos[1]
+
+    if user_id == None:
+        boardInfos[1] = "알수없음"
+    else:
+        sql = "SELECT nickname FROM userinfo WHERE user_id = %s"
+        curs.execute(sql, (user_id))
+        boardInfos[1] = curs.fetchone()[0]
+
+    conn.close()
 
     return boardInfos
 
 
 def getReplies(board_id):
-    sql = "SELECT u.nickname, r.contents " \
-          "FROM reply r, userinfo u " \
-          "WHERE r.board_id = %s AND r.user_id = u.user_id " \
-          "ORDER BY r.date ASC"
+    conn = pymysql.connect(host='localhost', user='supervisor', password='1234', db='db_teamproject')
+    curs = conn.cursor()
+
+    sql = "SELECT user_id, contents " \
+          "FROM reply " \
+          "WHERE board_id = %s " \
+          "ORDER BY date ASC"
 
     curs.execute(sql, (board_id))
-    replies = curs.fetchall()
+    replies = list(curs.fetchall())
+
+    for reply in replies:
+        id = reply[0]
+        if id == None:
+            pass
+        else:
+            sql = "SELECT nickname FROM userinfo WHERE user_id = %s"
+            curs.execute(sql, (id))
+            id = curs.fetchone()[0]
+
+    conn.close()
 
     return replies
 
 
 def plusRecommendCount(board_id, signals):
+    conn = pymysql.connect(host='localhost', user='supervisor', password='1234', db='db_teamproject')
+    curs = conn.cursor()
+
     sql = "UPDATE board SET recommends = recommends + 1 WHERE board_id = %s"
 
     curs.execute(sql, (board_id))
@@ -267,8 +385,13 @@ def plusRecommendCount(board_id, signals):
 
     signals.recommends_updated.emit()
 
+    conn.close()
+
 
 def addReply(board_id, user_id, contents, signals):
+    conn = pymysql.connect(host='localhost', user='supervisor', password='1234', db='db_teamproject')
+    curs = conn.cursor()
+
     sql = "INSERT INTO reply (user_id, board_id, contents, date) " \
           "VALUE(%s, %s, %s, now())"
     curs.execute(sql, (user_id, board_id, contents))
@@ -276,3 +399,4 @@ def addReply(board_id, user_id, contents, signals):
 
     signals.reply_added.emit()
 
+    conn.close()

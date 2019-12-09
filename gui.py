@@ -29,8 +29,6 @@ writeReply_window = uic.loadUiType("./ui/writeReply.ui")[0]
 
 # QT Designer에서 Application Modal로 설정하면 해당 창이 종료될 때 까지 다른 창에 접근 불가
 # .exec_()의 역할은 창이 꺼질 때까지 뒤의 코드가 실행되지 않기를 바랄 때 사용
-
-
 global user_id
 global nickname
 global loc
@@ -379,7 +377,7 @@ class ShowBoard(QWidget, showboard_window):
         # 검색 요소 얻어오기
         searchKeyword = self.searchTextLabel.text()
         category = self.categoryComboBox.currentText()
-        distance = self.distanceComboBox.currentText()[0]
+        distance = self.distanceComboBox.currentText()[0:-2]
         searchType = self.boundaryComboBox.currentText()
 
         # controller 모듈에서 검색한 게시글 목록 얻기
@@ -470,7 +468,6 @@ class ReplyWindow(QWidget, reply_window):
         self.setupUi(self)
 
         self.board_id = board_id
-        self.replies = controller.getReplies(self.board_id)
         self.signals = controller.Signals()
         self.signals.reply_added.connect(self.addReply)
 
@@ -505,7 +502,7 @@ class ReplyWindow(QWidget, reply_window):
         frame.setLayout(QGridLayout())
         frame.setFrameShape(QFrame.Box)
 
-        frame.layout().addWidget(QLabel(reply[0]), 0, 0, 2, 2)
+        frame.layout().addWidget(QLabel(reply[0] if reply[0] is not None else "알수없음"), 0, 0, 2, 2)
         frame.layout().addWidget(QLabel(reply[1]), 2, 0, 2, 6)
 
         return frame

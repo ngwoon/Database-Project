@@ -360,14 +360,16 @@ def getReplies(board_id):
     curs.execute(sql, (board_id))
     replies = list(curs.fetchall())
 
-    for reply in replies:
-        id = reply[0]
+    for i in range(len(replies)):
+        id = replies[i][0]
         if id == None:
             pass
         else:
             sql = "SELECT nickname FROM userinfo WHERE user_id = %s"
             curs.execute(sql, (id))
-            id = curs.fetchone()[0]
+            nickname = curs.fetchone()[0]
+            newReply = (nickname, replies[i][1])
+            replies[i] = newReply
 
     conn.close()
 

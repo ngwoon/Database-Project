@@ -1,4 +1,4 @@
-# Database-Project
-
+# 위치기반 SNS
 - 데이터베이스 수업 프로젝트
-- 위치 기반 SNS
+- 파이썬 GUI로 제작
+- mysql 사용
